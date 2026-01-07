@@ -1,0 +1,79 @@
+# Fast Api
+
+FastAPI is a modern, high-performance Python web framework designed specifically for building APIs quickly and efficiently. It is a backend framework that leverages standard Python type hints to automatically validate data, serialize responses, and generate interactive API documentation. 
+
+## Setup 
+
+- Create a python Virtual Enviroment and activate it
+
+```python3 []
+python -m venv venv
+
+./venv/Scripts/activate
+
+```
+- Then install fastapi
+
+```
+pip install fastapi[standard]
+```
+---
+## Creating a Fastapi route
+
+```
+from fastapi import FastApi
+
+app=FastApi()
+
+@app.get("/")
+async def greet():
+    return {"msg":"Hello world"}
+
+```
+## Working With dynamic URLS
+
+To work with dynamic urls you have to pass the variable in the route enclosed in curly braces when you enter any name after the route the name will be displayed 
+
+```
+@app.get("/greet/{name}")
+async def greet_name(name:str)->dict:
+    return {"greeting":f"Hello, {name}!"}
+```
+
+## Query parameters
+
+When you dont pass the variable in url and define in a function then fastapi will treat it as query parameter and in route you have to give a `?` before writing a variable name
+
+The purpose of query parameters is for main is filtering the data you can also set the default values of it 
+
+```
+@app.get("/greet_me")
+async def greet_me(name:str)->dict:
+    return {"greeting":f"Hello, {name}!"}
+```
+
+Now when calling this route this will be like 
+
+```
+http://localhost:8000/greet_me?name=Tabarak
+
+```
+
+## Creating A RESTAPI
+
+- In fastApi we create RESTAPI using @app.get , post , patch and delete and we perform it first by storing the list of dictionary in our `books.py` file.
+
+
+- To make our code more modular and managable we store different parts of program in different files such as we store the pydantic models in `schemas` file and api endpoints in `routes` file.
+  
+## Important Libraries used 
+
+### Alembic 
+A light weight database migration tool for python it keep track the changes in the table / model and update it without the need of droping the table
+
+### Bcrypt
+A library used to hash the passwords to store the user password securely
+
+### Secrets 
+The Python secrets module is a built-in standard library used for generating cryptographically strong random numbers. 
+
