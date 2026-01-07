@@ -3,6 +3,7 @@ from fastapi.security.http import HTTPAuthorizationCredentials
 from fastapi import Request, status
 from fastapi.exceptions import HTTPException
 from .utils import decode_token
+from src.db.redis import check_black_list
 
 
 class TokenBearer(HTTPBearer):
@@ -26,7 +27,11 @@ class TokenBearer(HTTPBearer):
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid or expired token",
             )
-
+        if await check_black_list(token_data['jti']):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail={"error":"This token is been revoked","resolution":"Plz get new token"}
+            )
         self.verify_token_data(token_data)
         return token_data
 

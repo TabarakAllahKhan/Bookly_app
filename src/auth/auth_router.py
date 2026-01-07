@@ -8,7 +8,8 @@ from src.auth.utils import access_token,decode_token,verify_password
 from datetime import timedelta,datetime
 from src.config import Config
 from fastapi.responses import JSONResponse
-from .dependencies import RefreshTokenBearer
+from .dependencies import RefreshTokenBearer,AccessTokenBearer
+from src.db.redis import check_black_list, create_jti_blocklist
 
 refresh_token_bearer=RefreshTokenBearer()
 
@@ -98,5 +99,16 @@ async def get_new_access_token(token_details:dict=Depends(refresh_token_bearer),
         )
     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,detail="Invalid or not found")
 
+@auth_router.get("/logout")
+async def revoked_token(token_details:dict=Depends(AccessTokenBearer())):
+    jti=token_details['jti']
+    await create_jti_blocklist(jti)
+    
+    return JSONResponse(
+        content={
+            "message":"Logged Out"
+        },
+        status_code=status.HTTP_200_OK
+    )
     
     
