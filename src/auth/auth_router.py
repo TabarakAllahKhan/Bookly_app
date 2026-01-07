@@ -5,9 +5,12 @@ from src.db.main import get_session
 from fastapi.exceptions import HTTPException
 from sqlmodel.ext.asyncio.session import AsyncSession
 from src.auth.utils import access_token,decode_token,verify_password
-from datetime import timedelta
+from datetime import timedelta,datetime
 from src.config import Config
 from fastapi.responses import JSONResponse
+from .dependencies import RefreshTokenBearer
+
+refresh_token_bearer=RefreshTokenBearer()
 
 REFRESH_TOKEN_EXPIRE=Config.REFRESH_TOKEN_EXPIRE
 
@@ -70,4 +73,30 @@ async def login(user_login_data:UserLoginModel,session:AsyncSession=Depends(get_
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
     
+@auth_router.get("/refresh_token")
+async def get_new_access_token(token_details:dict=Depends(refresh_token_bearer),session:AsyncSession=Depends(get_session)):
+    '''
+      This function will generate a new access token based on 
+      the refresh token is provided This function will be used
+      when the access token user logged in is expired and we
+      want to keep user logged in
+      
+      ARGS:
+      token_details : Accepts a token in decoded dictionary format
+      session : Returns The AsyncSession 
+    '''
+    expiry_date=token_details['exp']
+    
+    if datetime.fromtimestamp(expiry_date) > datetime.now():
+        new_access_token=access_token(
+            user_data=token_details['user']
+        )
+        return JSONResponse(
+            content={"access_token":new_access_token},
+            status_code=status.HTTP_200_OK
+            
+        )
+    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,detail="Invalid or not found")
 
+    
+    
