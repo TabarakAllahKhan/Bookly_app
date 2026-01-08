@@ -39,6 +39,15 @@ class TokenBearer(HTTPBearer):
         raise NotImplementedError("Please override this method in child classes")
 
 class AccessTokenBearer(TokenBearer):
+    '''
+    Docstring for AccessTokenBearer
+    
+    This class will be used in book routes as the access
+    token will be used in book routes we cant allow to use
+    refresh tokens so access token will be checked here to 
+    ensure that access token is present while accessing the
+    book apis
+    '''
     def verify_token_data(self, token_data: dict) -> None:
         if token_data.get("refresh"):
             raise HTTPException(
