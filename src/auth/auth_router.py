@@ -8,7 +8,7 @@ from src.auth.utils import access_token,decode_token,verify_password
 from datetime import timedelta,datetime
 from src.config import Config
 from fastapi.responses import JSONResponse
-from .dependencies import RefreshTokenBearer,AccessTokenBearer
+from .dependencies import RefreshTokenBearer,AccessTokenBearer,get_current_logged_user
 from src.db.redis import check_black_list, create_jti_blocklist
 
 refresh_token_bearer=RefreshTokenBearer()
@@ -98,6 +98,12 @@ async def get_new_access_token(token_details:dict=Depends(refresh_token_bearer),
             
         )
     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,detail="Invalid or not found")
+
+
+@auth_router.get("/me")
+async def get_current_user(user_details=Depends(get_current_logged_user)):
+    return user_details
+
 
 @auth_router.get("/logout")
 async def revoked_token(token_details:dict=Depends(AccessTokenBearer())):

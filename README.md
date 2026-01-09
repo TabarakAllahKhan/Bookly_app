@@ -79,3 +79,21 @@ The Python secrets module is a built-in standard library used for generating cry
 
 ### Redis
 Redis is used to create and store a blocklist JWT tokens id when a user logout that jwt id will be stored in a blocklits and every time a user make a request his jwt id will be checked if is it in a blocklist or not
+
+## Role base Access Control
+
+The app uses also the role base access control currently it has 2 roles `admin` and 
+`user` the admin will have the following control
+
+- Adding users
+- change roles 
+- crud on users 
+- book submissions
+- crud on reviews 
+- revoking access
+
+Similarly the users which will use the application will have the following control
+
+- Crud on their own book submission
+- crud on their reviews 
+- crud on their accounts
