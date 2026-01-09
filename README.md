@@ -77,3 +77,5 @@ A library used to hash the passwords to store the user password securely
 ### Secrets 
 The Python secrets module is a built-in standard library used for generating cryptographically strong random numbers. 
 
+### Redis
+Redis is used to create and store a blocklist JWT tokens id when a user logout that jwt id will be stored in a blocklits and every time a user make a request his jwt id will be checked if is it in a blocklist or not
