@@ -5,26 +5,27 @@ from src.db.main import get_session
 from sqlmodel.ext.asyncio.session import AsyncSession
 from src.books.service import BookService
 import uuid
-from src.auth.dependencies import AccessTokenBearer
+from src.auth.dependencies import AccessTokenBearer,RoleChecker
 
+role_checker=RoleChecker(['admin','user'])
 book_router=APIRouter()
 book_service=BookService()
 access_token_bearer=AccessTokenBearer()
 
 @book_router.get("/",response_model=list[Book])
-async def get_all_books(session:AsyncSession=Depends(get_session),user_details=Depends(access_token_bearer))->list:
+async def get_all_books(session:AsyncSession=Depends(get_session),user_details=Depends(access_token_bearer),_:bool=Depends(role_checker))->list:
    print(user_details)
    books= await book_service.get_all_books(session)
    return books
 
 
 @book_router.post("/",status_code=status.HTTP_201_CREATED,response_model=BookCreateModel)
-async def create_book(book_data:BookCreateModel,session:AsyncSession=Depends(get_session),user_details=Depends(access_token_bearer))->dict:
+async def create_book(book_data:BookCreateModel,session:AsyncSession=Depends(get_session),user_details=Depends(access_token_bearer),_:bool=Depends(role_checker))->dict:
      new_book= await book_service.create_book(book_data,session)
      return new_book
 
 @book_router.get("/{book_uid}",response_model=Book)
-async def get_book_by_id(book_uid:str,session:AsyncSession=Depends(get_session),user_details=Depends(access_token_bearer))->dict:
+async def get_book_by_id(book_uid:str,session:AsyncSession=Depends(get_session),user_details=Depends(access_token_bearer),_:bool=Depends(role_checker))->dict:
     try:
         book_id=uuid.UUID(book_uid)
     except ValueError:
@@ -37,7 +38,7 @@ async def get_book_by_id(book_uid:str,session:AsyncSession=Depends(get_session),
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
 @book_router.patch("/{book_uid}", response_model=Book)
-async def update_book(book_uid:str,book_update:BookUpdate,session:AsyncSession=Depends(get_session),user_details=Depends(access_token_bearer)) -> Book:
+async def update_book(book_uid:str,book_update:BookUpdate,session:AsyncSession=Depends(get_session),user_details=Depends(access_token_bearer),_:bool=Depends(role_checker)) -> Book:
        try:
               book_id=uuid.UUID(book_uid)
        except ValueError:
@@ -49,7 +50,7 @@ async def update_book(book_uid:str,book_update:BookUpdate,session:AsyncSession=D
              raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
          
 @book_router.delete("/{book_uid}")
-async def delete_book(book_uid:str,book_data=Book,session:AsyncSession=Depends(get_session),user_details=Depends(access_token_bearer))->dict:
+async def delete_book(book_uid:str,book_data=Book,session:AsyncSession=Depends(get_session),user_details=Depends(access_token_bearer),_:bool=Depends(role_checker))->dict:
      deleted_book=await book_service.delete_book(book_uid,session)
      if deleted_book:
            return {"message":"Book deleted successfully"}
