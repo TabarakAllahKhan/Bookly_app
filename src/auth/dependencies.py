@@ -7,6 +7,7 @@ from src.db.redis import check_black_list
 from src.db.main import get_session
 from sqlmodel.ext.asyncio.session import AsyncSession
 from src.auth.user_service import UserService
+from src.auth.user_model import User
 
 user_service=UserService()
 
@@ -77,6 +78,8 @@ class RefreshTokenBearer(TokenBearer):
                 detail="Please provide a valid refresh token",
             )
 
+
+       
 async def get_current_logged_user(user_details:dict=Depends(AccessTokenBearer()),session:AsyncSession=Depends(get_session)):
         '''
         This function is used in role base access control to get the current logged in user
@@ -95,5 +98,14 @@ async def get_current_logged_user(user_details:dict=Depends(AccessTokenBearer())
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="User not found")
         
         
-        
+# creating a role checking dependency
+class RoleChecker:
+    def __init__(self,allowed_role:list[str])->None:
+        self.allowed_role=allowed_role
     
+    def __call__(self,current_user:User=Depends(get_current_logged_user)):
+        
+        if current_user.role in self.allowed_role:
+            return True
+        else:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail="Access Denied")
