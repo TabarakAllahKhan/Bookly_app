@@ -17,6 +17,12 @@ class BookService:
         result = await session.exec(statement)
         return result.all()
     
+    async def get_user_book_submission(self,u_id:str,session:AsyncSession):
+        statement=select(Book).where(Book.user_uid==u_id)
+        result=await session.exec(statement)
+        books=result.all()
+        return books if books is not None else None
+    
     async def get_book_by_id(self,book_uid,session:AsyncSession):
         '''This method retrieves a book by its unique identifier (uid).
            It returns a Book object if found, otherwise None.
@@ -25,9 +31,10 @@ class BookService:
         result = await session.exec(statement)
         book=result.first()
         return book if book is not None else None
-    async def create_book(self,book_data:BookCreateModel,session:AsyncSession):
+    async def create_book(self,book_data:BookCreateModel,user_uid:str,session:AsyncSession):
           book_data_dict=book_data.model_dump()
           new_book=Book(**book_data_dict)
+          new_book.user_uid=user_uid
           session.add(new_book)
           await session.commit()
           await session.refresh(new_book)
