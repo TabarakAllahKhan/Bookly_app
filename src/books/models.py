@@ -6,6 +6,7 @@ from sqlmodel import SQLModel,Field,Column
 # features from SQLAlchemy (which SQLModel is built on top of).
 import sqlalchemy.dialects.postgresql as pg
 from datetime import datetime
+from typing import Optional
 import uuid
 class Book(SQLModel,table=True):
     __tablename__="books"
@@ -23,6 +24,7 @@ class Book(SQLModel,table=True):
     price: float
     available: bool
     summary: str
+    user_uid:Optional[uuid.UUID]=Field(default=None,foreign_key="users.uid")
     created_at: datetime=Field(default_factory=datetime.now)
     updated_at: datetime=Field(default_factory=datetime.now)
 
