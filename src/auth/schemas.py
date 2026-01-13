@@ -17,17 +17,16 @@ class UserCreateModel(BaseModel):
     password:str = Field(min_length=6, max_length=20)
 
 class UserModel(BaseModel):
-    uid:uuid.UUID
-    username:str
     email:str
-    is_verified:bool
-    created_at:datetime
-    updated_at:datetime
+    is_verified:bool=Field(default=False)
+   
 
 class UserLoginModel(BaseModel):
     email:EmailStr=Field(max_length=40)
     password:str=Field(min_length=6)
     
 
+    
+    
 class Config:
     orm_mode = True

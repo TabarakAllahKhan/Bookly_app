@@ -1,8 +1,10 @@
 from src.auth.user_model import User
 from sqlmodel.ext.asyncio.session import AsyncSession
-from src.auth.schemas import UserCreateModel
+from src.auth.schemas import UserCreateModel,UserModel
 from src.auth.utils import generate_hash_password
 from sqlmodel import select
+from fastapi import Depends
+from src.db.main import get_session
 
 
 
@@ -12,7 +14,9 @@ class UserService:
     '''
     async def get_user_by_email(self,email:str,session:AsyncSession):
         statement=select(User).where(User.email==email)
+        
         result=await session.exec(statement)
+    
         return result.first()
     
     async def user_exists(self,email:str,session:AsyncSession)->bool:
@@ -29,6 +33,11 @@ class UserService:
             await session.commit()
             await session.refresh(user)
             return user        
+        
+    async def is_user_verified(self,email:str,session:AsyncSession=Depends(get_session)):
+        statement=await self.get_user_by_email(email=email,session=session)
+        if statement is not None:
+            return statement.is_verified
             
             
             

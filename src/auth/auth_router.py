@@ -38,6 +38,7 @@ async def login(user_login_data:UserLoginModel,session:AsyncSession=Depends(get_
     email=user_login_data.email
     password=user_login_data.password
     
+    
     user=await user_service.get_user_by_email(email,session)
     if user is not None:
         # check if password is valid from database
@@ -107,7 +108,12 @@ async def get_current_user(user_details=Depends(get_current_logged_user),_:bool=
     return user_details
 
 
-
+@auth_router.get("/verify")
+async def is_verified_user(verified=Depends(user_service.is_user_verified)):
+       if verified is not None:
+           return verified
+       raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail="User is not verified")
+    
 @auth_router.get("/logout")
 async def revoked_token(token_details:dict=Depends(AccessTokenBearer())):
     jti=token_details['jti']
