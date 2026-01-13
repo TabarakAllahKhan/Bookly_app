@@ -34,10 +34,29 @@ class UserService:
             await session.refresh(user)
             return user        
         
-    async def is_user_verified(self,email:str,session:AsyncSession=Depends(get_session)):
+    async def is_user_verified(self,email:str,session:AsyncSession):
         statement=await self.get_user_by_email(email=email,session=session)
         if statement is not None:
             return statement.is_verified
+    
+    async def get_verified(self,email,session:AsyncSession):
+        user=await self.get_user_by_email(email=email,session=session)
+        
+        if not user:
+            raise ValueError("User not found")
+        
+        if user.is_verified:
+            return {"verified":True,"msg":"user is already verified"}
+        
+        user.is_verified=True
+        session.add(user)
+        await session.commit()
+        await session.refresh(user)
+        
+        return {
+            "verified":True,
+            "message":"user is verified"
+        }
             
             
             

@@ -108,12 +108,27 @@ async def get_current_user(user_details=Depends(get_current_logged_user),_:bool=
     return user_details
 
 
-@auth_router.get("/verify")
-async def is_verified_user(verified=Depends(user_service.is_user_verified)):
-       if verified is not None:
-           return verified
-       raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail="User is not verified")
+@auth_router.post("/verify")
+async def is_verified_user(email:str,session:AsyncSession=Depends(get_session)):
+       verified=await user_service.is_user_verified(email=email,session=session)
+       if verified:
+           return {"message":"verified"}
+       raise HTTPException(
+           status_code=status.HTTP_401_UNAUTHORIZED,
+           detail="User is not verified"
+       )
+
+@auth_router.post("/getverified",response_model=UserModel)
+async def get_verified(email:str,session:AsyncSession=Depends(get_session)):
     
+    try:
+        return await user_service.get_verified(email,session)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+          
 @auth_router.get("/logout")
 async def revoked_token(token_details:dict=Depends(AccessTokenBearer())):
     jti=token_details['jti']

@@ -17,9 +17,8 @@ class UserCreateModel(BaseModel):
     password:str = Field(min_length=6, max_length=20)
 
 class UserModel(BaseModel):
-    email:str
-    is_verified:bool=Field(default=False)
-   
+    verified:bool
+    message:str
 
 class UserLoginModel(BaseModel):
     email:EmailStr=Field(max_length=40)
