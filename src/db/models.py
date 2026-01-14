@@ -55,5 +55,17 @@ def __repr__(self) -> str:
     return f"<User{self.username}>"
 
 
+class Review(SQLModel,table=True):
+    __tablename__="reviews"
+    
+    uid:uuid.UUID=Field(sa_column=Column(pg.UUID,nullable=False,primary_key=True,default=uuid.uuid4))
+    rating:int=Field(lt=5)
+    review_txt:str
+    user_uid:Optional[uuid.UUID]=Field(default=None,foreign_key="users.uid")
+    book_uid:Optional[uuid.UUID]=Field(default=None,foreign_key="books.id")
+    created_at:datetime=Field(sa_column=Column(pg.TIMESTAMP,default=datetime.now))
+    updated_at:datetime=Field(sa_column=Column(pg.TIMESTAMP,default=datetime.now))
+    
 
-
+    def __repr__(self):
+        return f"<Review for book {self.book_uid} by user {self.user_uid}>"

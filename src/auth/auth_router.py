@@ -129,28 +129,9 @@ async def get_verified(email:str,session:AsyncSession=Depends(get_session)):
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found"
         )
-@auth_router.get("/googlelogin")
-async def google_login():
-    '''Initiates the Google login Flow'''
-    async with google_sso:
-        return await google_sso.get_login_redirect()
 
-@auth_router.get("/callback")
-async def google_callback(user=Depends(get_google_user)):
-    token_payload={
-        "sub":user.email,
-        "picture":user.picture,
-        "display_name":user.display_name
-    }
-    access_token=access_token(token_payload)
-    return {
-        "access_token": access_token,
-        "token_type": "bearer",
-        "user": {
-            "email": user.email,
-            "name": user.display_name
-        }
-    }     
+
+  
 @auth_router.get("/logout")
 async def revoked_token(token_details:dict=Depends(AccessTokenBearer())):
     jti=token_details['jti']
