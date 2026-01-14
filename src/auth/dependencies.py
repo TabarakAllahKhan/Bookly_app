@@ -7,7 +7,8 @@ from src.db.redis import check_black_list
 from src.db.main import get_session
 from sqlmodel.ext.asyncio.session import AsyncSession
 from src.auth.user_service import UserService
-from src.auth.user_model import User
+from src.db.models import User
+from src.googleconfig import google_sso,oauth2scheme
 
 user_service=UserService()
 
@@ -109,3 +110,19 @@ class RoleChecker:
             return True
         else:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail="Access Denied")
+
+async def get_google_user(req:Request):
+    try:
+        async with google_sso:
+            user=await google_sso.verify_and_process(request=req)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Google login failed"
+            )
+        return user
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"authentication failed {str(e)}"
+        )

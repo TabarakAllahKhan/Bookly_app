@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from src.books.routes import book_router
 from src.auth.auth_router import auth_router
 from contextlib import asynccontextmanager
@@ -19,7 +20,10 @@ app = FastAPI(
     title="Bookly",
     description="A simple book management API",
     version=version,
+    lifespan=lifespan,
 )
+
+
 
 app.include_router(book_router,prefix=f"/api/{version}/books",tags=["books"])
 app.include_router(auth_router,prefix=f"/api/{version}/auth",tags=["auth"])

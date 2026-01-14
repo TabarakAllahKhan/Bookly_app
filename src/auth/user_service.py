@@ -1,4 +1,4 @@
-from src.auth.user_model import User
+from src.db.models import User
 from sqlmodel.ext.asyncio.session import AsyncSession
 from src.auth.schemas import UserCreateModel,UserModel
 from src.auth.utils import generate_hash_password

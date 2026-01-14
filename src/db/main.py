@@ -15,7 +15,7 @@ async def init_db():
     This function is used to connect to the database and create all tables.
     '''
     async with engine.begin() as conn:
-        from src.books.models import Book
+        from src.db.models import Book
         await conn.run_sync(SQLModel.metadata.create_all)
 
 # Define the dependency injection function for getting the database engine
