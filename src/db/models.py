@@ -1,7 +1,7 @@
 #This imports necessary components from the SQLModel 
 # library, which is used to define SQL database models in Python.
 
-from sqlmodel import SQLModel,Field,Column
+from sqlmodel import Relationship, SQLModel,Field,Column
 #this import brings in PostgreSQL-specific 
 # features from SQLAlchemy (which SQLModel is built on top of).
 import sqlalchemy.dialects.postgresql as pg
@@ -65,7 +65,7 @@ class Review(SQLModel,table=True):
     book_uid:Optional[uuid.UUID]=Field(default=None,foreign_key="books.id")
     created_at:datetime=Field(sa_column=Column(pg.TIMESTAMP,default=datetime.now))
     updated_at:datetime=Field(sa_column=Column(pg.TIMESTAMP,default=datetime.now))
-    
+    user:Optional[User]=Relationship(back_populates="reviews")
 
     def __repr__(self):
         return f"<Review for book {self.book_uid} by user {self.user_uid}>"
