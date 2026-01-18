@@ -6,7 +6,7 @@ from sqlmodel import Relationship, SQLModel,Field,Column
 # features from SQLAlchemy (which SQLModel is built on top of).
 import sqlalchemy.dialects.postgresql as pg
 from datetime import datetime
-from typing import Optional
+from typing import Optional,List
 import uuid
 class Book(SQLModel,table=True):
     __tablename__="books"
@@ -27,6 +27,7 @@ class Book(SQLModel,table=True):
     user_uid:Optional[uuid.UUID]=Field(default=None,foreign_key="users.uid")
     created_at: datetime=Field(default_factory=datetime.now)
     updated_at: datetime=Field(default_factory=datetime.now)
+    reviews:List["Review"]=Relationship(back_populates="book")
 
     def __repr__(self):
         return f"Book {self.title}"
@@ -48,7 +49,8 @@ class User(SQLModel,table=True):
     password_hash:str=Field(nullable=False,exclude=True)
     is_verified:bool = Field(default=False, nullable=False)
     created_at:datetime = Field(default_factory=datetime.now, nullable=False)
-    updated_at:datetime = Field(default_factory=datetime.now, nullable=False)    
+    updated_at:datetime = Field(default_factory=datetime.now, nullable=False)
+    reviews:List['Review']=Relationship(back_populates="user")    
 
 
 def __repr__(self) -> str:
@@ -66,6 +68,7 @@ class Review(SQLModel,table=True):
     created_at:datetime=Field(sa_column=Column(pg.TIMESTAMP,default=datetime.now))
     updated_at:datetime=Field(sa_column=Column(pg.TIMESTAMP,default=datetime.now))
     user:Optional[User]=Relationship(back_populates="reviews")
+    book:Optional[Book]=Relationship(back_populates="reviews")
 
     def __repr__(self):
         return f"<Review for book {self.book_uid} by user {self.user_uid}>"
