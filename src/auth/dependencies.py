@@ -8,7 +8,6 @@ from src.db.main import get_session
 from sqlmodel.ext.asyncio.session import AsyncSession
 from src.auth.user_service import UserService
 from src.db.models import User
-from src.googleconfig import google_sso,oauth2scheme
 
 user_service=UserService()
 

@@ -10,7 +10,6 @@ from src.config import Config
 from fastapi.responses import JSONResponse
 from .dependencies import RefreshTokenBearer,AccessTokenBearer,get_current_logged_user,RoleChecker,get_google_user
 from src.db.redis import check_black_list, create_jti_blocklist
-from src.googleconfig import google_sso
 
 refresh_token_bearer=RefreshTokenBearer()
 
