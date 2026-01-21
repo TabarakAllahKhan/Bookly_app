@@ -27,3 +27,8 @@ class ReviewCreateSchema(BaseModel):
     rating:int=Field(lt=5)
     # accept incoming JSON field `review_text` and map it to `review_txt`
     review_txt:str = Field(alias="review_text")
+
+class ReviewUpdateSchema(BaseModel):
+  rating:Optional[int]
+  review_txt:Optional[str]=Field(alias="review_text")
+  
