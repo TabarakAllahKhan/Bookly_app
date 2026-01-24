@@ -1,11 +1,13 @@
-from fastapi import FastAPI
+from fastapi import FastAPI,status
 from fastapi.middleware.cors import CORSMiddleware
 from src.books.routes import book_router
 from src.auth.auth_router import auth_router
 from src.reviews.review_routes import review_router
 from src.tags.routes import tags_router
+from .errors import register_exception_handler
 from contextlib import asynccontextmanager
 from src.db.main import init_db
+from src.middleware import register_middleware
 
 @asynccontextmanager
 async def lifespan(app:FastAPI):
@@ -25,6 +27,8 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+register_exception_handler(app)
+register_middleware(app)
 
 
 app.include_router(book_router,prefix=f"/api/{version}/books",tags=["books"])

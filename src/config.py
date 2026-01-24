@@ -8,7 +8,8 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE:int
     REDIS_HOST:str="localhost"
     REDIS_PORT:int
-   
+    GMAIL:str
+    GMAIL_PASSWORD:str
     
     model_config=SettingsConfigDict(
         env_file=".env",

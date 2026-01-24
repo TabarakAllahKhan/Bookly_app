@@ -28,7 +28,7 @@ async def get_user_book_submission(u_id:str,session:AsyncSession=Depends(get_ses
 
         get_book_details=await book_service.get_user_book_submission(u_id=u_id,session=session)
         return get_book_details
-    except BookNotFound:
+    except:
         raise BookNotFound()
 
 @book_router.post("/",status_code=status.HTTP_201_CREATED,response_model=BookCreateModel)
@@ -37,7 +37,7 @@ async def create_book(book_data:BookCreateModel,user_details:dict=Depends(access
       user_id=user_details.get('user')['u_id']
       new_book= await book_service.create_book(book_data,user_id,session)
       return new_book
-    except BookInsertionError:
+    except:
         raise BookInsertionError()
 
 @book_router.get("/{book_uid}",response_model=Book)

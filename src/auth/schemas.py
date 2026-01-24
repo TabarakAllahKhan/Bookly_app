@@ -23,9 +23,11 @@ class UserModel(BaseModel):
 class UserLoginModel(BaseModel):
     email:EmailStr=Field(max_length=40)
     password:str=Field(min_length=6)
-    
 
-    
+class EmailSchema(BaseModel):
+    addresses:list[str]
+
+
     
 class Config:
     orm_mode = True

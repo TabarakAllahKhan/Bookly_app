@@ -1,5 +1,5 @@
-from fastapi import APIRouter,Depends,status
-from src.auth.schemas import UserCreateModel,UserModel,UserLoginModel
+from fastapi import APIRouter,Depends,status,BackgroundTasks
+from src.auth.schemas import UserCreateModel,UserModel,UserLoginModel,EmailSchema
 from src.auth.user_service import UserService
 from src.db.main import get_session
 from fastapi.exceptions import HTTPException
@@ -10,6 +10,15 @@ from src.config import Config
 from fastapi.responses import JSONResponse
 from .dependencies import RefreshTokenBearer,AccessTokenBearer,get_current_logged_user,RoleChecker
 from src.db.redis import check_black_list, create_jti_blocklist
+from redmail import gmail
+import os
+from pathlib import Path
+
+BASE_DIR=Path(__file__).resolve().parent
+
+gmail.username=Config.GMAIL
+gmail.password=Config.GMAIL_PASSWORD
+
 from src.errors import (
     UserAlreadyExists,
     UserNotFound,
@@ -24,6 +33,36 @@ auth_router=APIRouter()
 user_service=UserService()
 role_checker=RoleChecker(['admin','user'])
 
+@auth_router.post("/send_mail")
+async def send_mail(emails: EmailSchema, background_tasks: BackgroundTasks):
+    # Extract the list of addresses from your Pydantic model
+    recipient_list = emails.addresses
+    file_path=BASE_DIR.parent / "testing.docx"
+    
+    attachments={}
+    
+    if os.path.exists(file_path):
+        attachments={"testing.docx":file_path}
+    
+    # Define the HTML content
+    html_content = """
+    <h1>Welcome to Bookly</h1>
+    <p>This is a test email from the <b>Bookly</b> application. you are ready to go</p>
+    """
+    
+    # Use BackgroundTasks so the API stays fast
+    background_tasks.add_task(
+        gmail.send,
+        subject="Welcome to Bookly",
+        receivers=recipient_list,
+        html=html_content,  # Pass the HTML here
+        text="Welcome to Bookly!" ,# Fallback for plain-text clients
+        attachments=attachments
+    )
+    
+    return {"message": "Email is being sent successfully"}
+    
+    
 @auth_router.post("/signup",response_model=UserModel,status_code=status.HTTP_201_CREATED)
 async def signup(user_data: UserCreateModel,session:AsyncSession=Depends(get_session)):
     email=user_data.email

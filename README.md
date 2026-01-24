@@ -103,3 +103,17 @@ Similarly the users which will use the application will have the following contr
 
 ## DataBase Realtionship
 In this app i used to connect 2 tables `book` and `users` table by declaring the user id a FOREIGN KEY and add the functionality that we can retrive the id of the user who submitted the book
+
+![alt text](image-1.png)
+
+## Mail Sending Functionality
+The bookly app also have the functionality
+of sending mails for that i used the library
+`redmail` to send email to users using that
+we can verify the user and perform password resets also. There is another option fastapi mail but that require much code and setup so i prefer that
+
+The Library i used can be installed here:
+
+```
+pip install redmail
+```
