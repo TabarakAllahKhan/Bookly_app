@@ -8,7 +8,12 @@ from src.db.main import get_session
 from sqlmodel.ext.asyncio.session import AsyncSession
 from src.auth.user_service import UserService
 from src.db.models import User
-from src.errors import InvalidToken
+from src.errors import (
+    InvalidToken,
+    RefreshTokenRequired,
+    AccessTokenRequired,
+    InsufficientPermission
+)
 
 user_service=UserService()
 
@@ -63,18 +68,12 @@ class AccessTokenBearer(TokenBearer):
     '''
     def verify_token_data(self, token_data: dict) -> None:
         if token_data.get("refresh"):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Please provide a valid access token",
-            )
+            raise AccessTokenRequired()
 
 class RefreshTokenBearer(TokenBearer):
     def verify_token_data(self, token_data: dict) -> None:
         if not token_data.get("refresh"):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Please provide a valid refresh token",
-            )
+            raise RefreshTokenRequired()
 
 
        
@@ -106,20 +105,5 @@ class RoleChecker:
         if current_user.role in self.allowed_role:
             return True
         else:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail="Access Denied")
+            raise InsufficientPermission()
 
-async def get_google_user(req:Request):
-    try:
-        async with google_sso:
-            user=await google_sso.verify_and_process(request=req)
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Google login failed"
-            )
-        return user
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"authentication failed {str(e)}"
-        )

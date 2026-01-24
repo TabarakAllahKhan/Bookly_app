@@ -34,6 +34,9 @@ class BookNotFound(BooklyException):
     """Book Not found"""
     pass
 
+class BookInsertionError(BooklyException):
+    """Error occurred while inserting a book"""
+    pass
 class TagNotFound(BooklyException):
     """Tag Not found"""
     pass
@@ -45,3 +48,8 @@ class TagAlreadyExists(BooklyException):
 class UserNotFound(BooklyException):
     """User Not found"""
     pass
+
+class InvalidCredentials(BooklyException):
+    """User provided wrong email or password during log in."""
+    pass
+

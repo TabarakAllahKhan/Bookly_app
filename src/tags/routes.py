@@ -10,6 +10,11 @@ from src.db.main import get_session
 
 from .schemas import TagAddSchema,TagCreateSchema,TagSchema
 from .service import TagService
+from src.errors import (
+    TagAlreadyExists,
+    TagNotFound,
+    BookNotFound
+)
 
 tags_router = APIRouter()
 tag_service = TagService()
@@ -18,9 +23,12 @@ user_role_checker = Depends(RoleChecker(["user", "admin"]))
 
 @tags_router.get("/", response_model=List[TagSchema], dependencies=[user_role_checker])
 async def get_all_tags(session: AsyncSession = Depends(get_session)):
-    tags = await tag_service.get_all_tags(session)
+    try:
+        tags = await tag_service.get_all_tags(session)
+        return tags
+    except TagNotFound:
+        raise TagNotFound()
 
-    return tags
 
 
 @tags_router.post(
@@ -32,7 +40,14 @@ async def get_all_tags(session: AsyncSession = Depends(get_session)):
 async def add_tag(
     tag_data: TagCreateSchema, session: AsyncSession = Depends(get_session)
 ) -> TagSchema:
-
+    try:
+        existing_tag = await tag_service.get_tag_by_name(
+            tag_name=tag_data.name, session=session
+        )
+        if existing_tag:
+            raise TagAlreadyExists()
+    except TagNotFound:
+            raise TagNotFound()
     tag_added = await tag_service.add_tag(tag_data=tag_data, session=session)
 
     return tag_added

@@ -8,8 +8,13 @@ from src.auth.utils import access_token,decode_token,verify_password
 from datetime import timedelta,datetime
 from src.config import Config
 from fastapi.responses import JSONResponse
-from .dependencies import RefreshTokenBearer,AccessTokenBearer,get_current_logged_user,RoleChecker,get_google_user
+from .dependencies import RefreshTokenBearer,AccessTokenBearer,get_current_logged_user,RoleChecker
 from src.db.redis import check_black_list, create_jti_blocklist
+from src.errors import (
+    UserAlreadyExists,
+    UserNotFound,
+    InvalidToken
+)
 
 refresh_token_bearer=RefreshTokenBearer()
 
@@ -24,7 +29,7 @@ async def signup(user_data: UserCreateModel,session:AsyncSession=Depends(get_ses
     email=user_data.email
     user_exist= user_service.user_exists(email,session)
     if await user_exist:
-       raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,detail="User with this email already exists")
+       raise UserAlreadyExists()
     else:
         user=await user_service.create_user(user_data,session)
     return user
@@ -74,7 +79,7 @@ async def login(user_login_data:UserLoginModel,session:AsyncSession=Depends(get_
             status_code=200
             
         )
-    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    raise UserNotFound()
 
     
 @auth_router.get("/refresh_token")
@@ -100,7 +105,7 @@ async def get_new_access_token(token_details:dict=Depends(refresh_token_bearer),
             status_code=status.HTTP_200_OK
             
         )
-    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,detail="Invalid or not found")
+    raise InvalidToken()
 
 
 @auth_router.get("/me")
