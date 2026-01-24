@@ -8,6 +8,7 @@ from src.db.main import get_session
 from sqlmodel.ext.asyncio.session import AsyncSession
 from src.auth.user_service import UserService
 from src.db.models import User
+from src.errors import InvalidToken
 
 user_service=UserService()
 
@@ -38,10 +39,7 @@ class TokenBearer(HTTPBearer):
         token_data = decode_token(token)
 
         if not token_data:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid or expired token",
-            )
+            raise InvalidToken()
         if await check_black_list(token_data['jti']):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,

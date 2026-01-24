@@ -8,6 +8,39 @@ import sqlalchemy.dialects.postgresql as pg
 from datetime import datetime
 from typing import Optional,List
 import uuid
+
+
+
+from sqlmodel import SQLModel,Field,Column
+import uuid
+from datetime import datetime
+import sqlalchemy.dialects.postgresql as pg
+
+
+
+
+
+class BookTag(SQLModel, table=True):
+    book_id: uuid.UUID = Field(default=None, foreign_key="books.id", primary_key=True)
+    tag_id: uuid.UUID = Field(default=None, foreign_key="tags.uid", primary_key=True)
+
+
+class Tag(SQLModel, table=True):
+    __tablename__ = "tags"
+    uid: uuid.UUID = Field(
+        sa_column=Column(pg.UUID, nullable=False, primary_key=True, default=uuid.uuid4)
+    )
+    name: str = Field(sa_column=Column(pg.VARCHAR, nullable=False))
+    created_at: datetime = Field(sa_column=Column(pg.TIMESTAMP, default=datetime.now))
+    books: List["Book"] = Relationship(
+        link_model=BookTag,
+        back_populates="tags",
+        sa_relationship_kwargs={"lazy": "selectin"},
+    )
+
+    def __repr__(self) -> str:
+        return f"<Tag {self.name}>"
+
 class Book(SQLModel,table=True):
     __tablename__="books"
     '''
@@ -28,16 +61,15 @@ class Book(SQLModel,table=True):
     created_at: datetime=Field(default_factory=datetime.now)
     updated_at: datetime=Field(default_factory=datetime.now)
     reviews:List["Review"]=Relationship(back_populates="book")
+    tags:List[Tag]=Relationship(
+        link_model=BookTag,
+        back_populates="books",
+        sa_relationship_kwargs={"lazy":"selectin"}
+    )
 
     def __repr__(self):
         return f"Book {self.title}"
-
-
-from sqlmodel import SQLModel,Field,Column
-import uuid
-from datetime import datetime
-import sqlalchemy.dialects.postgresql as pg
-
+    
 class User(SQLModel,table=True):
     '''This class is used to define the User model for authentication purposes.'''
     __tablename__="users"
