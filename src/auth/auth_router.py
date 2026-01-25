@@ -4,7 +4,7 @@ from src.auth.user_service import UserService
 from src.db.main import get_session
 from fastapi.exceptions import HTTPException
 from sqlmodel.ext.asyncio.session import AsyncSession
-from src.auth.utils import access_token,decode_token,verify_password
+from src.auth.utils import access_token,decode_token,verify_password,create_email_token,decode_email_token
 from datetime import timedelta,datetime
 from src.config import Config
 from fastapi.responses import JSONResponse
@@ -64,14 +64,33 @@ async def send_mail(emails: EmailSchema, background_tasks: BackgroundTasks):
     
     
 @auth_router.post("/signup",response_model=UserModel,status_code=status.HTTP_201_CREATED)
-async def signup(user_data: UserCreateModel,session:AsyncSession=Depends(get_session)):
+async def signup(user_data: UserCreateModel,background_tasks:BackgroundTasks,session:AsyncSession=Depends(get_session)):
     email=user_data.email
     user_exist= user_service.user_exists(email,session)
     if await user_exist:
        raise UserAlreadyExists()
     else:
         user=await user_service.create_user(user_data,session)
-    return user
+        # attempt to create verification token and schedule email; don't let failures block signup
+        try:
+            domain=Config.DOMAIN
+            token=create_email_token({"email":email})
+            verify_link=f"http://{domain}/api/v1/auth/verify/{token}"
+            html_mssage=f"""
+               <h1>Verify your email</h1>
+               <p>Click this <a href="{verify_link}"> link</a> to verify your email address</p>
+            """
+            background_tasks.add_task(
+                gmail.send,
+                subject="Verify your email",
+                receivers=[email],
+                html=html_mssage,
+                text=f"Verify: {verify_link}"
+            )
+        except Exception as e:
+            import logging
+            logging.exception("Failed to create verification token or send email")
+    return {"verified": user.is_verified, "message": "User created successfully. Please verify your email."}
 
 @auth_router.post("/login",status_code=status.HTTP_200_OK)
 async def login(user_login_data:UserLoginModel,session:AsyncSession=Depends(get_session)):
@@ -174,7 +193,21 @@ async def get_verified(email:str,session:AsyncSession=Depends(get_session)):
         )
 
 
-  
+@auth_router.delete("/delete_user")
+async def delete_user(email:str,session:AsyncSession=Depends(get_session)):
+    deleted=await user_service.delete_user(email,session)
+    if deleted:
+        return JSONResponse(
+            content={
+                "message":"User deleted successfully"
+            },
+            status_code=status.HTTP_200_OK
+        )
+    raise HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail="User not found"
+    )
+    
 @auth_router.get("/logout")
 async def revoked_token(token_details:dict=Depends(AccessTokenBearer())):
     jti=token_details['jti']

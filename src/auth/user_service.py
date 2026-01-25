@@ -5,6 +5,8 @@ from src.auth.utils import generate_hash_password
 from sqlmodel import select
 from fastapi import Depends
 from src.db.main import get_session
+from sqlalchemy.exc import IntegrityError
+from src.errors import UserAlreadyExists
 
 
 
@@ -30,9 +32,20 @@ class UserService:
             user.password_hash=generate_hash_password(new_user['password'])
             user.role="user"
             session.add(user)
-            await session.commit()
-            await session.refresh(user)
-            return user        
+            try:
+                await session.commit()
+                await session.refresh(user)
+                return user
+            except IntegrityError as err:
+                await session.rollback()
+                msg = str(err.orig) if hasattr(err, 'orig') else str(err)
+                # determine which field caused the conflict
+                if 'username' in msg or 'ix_users_username' in msg or 'Key (username)' in msg:
+                    raise UserAlreadyExists('User with given username already exists')
+                if 'email' in msg or 'ix_users_email' in msg or 'Key (email)' in msg:
+                    raise UserAlreadyExists('User with given email already exists')
+                # fallback
+                raise UserAlreadyExists('User with given credentials already exists')
         
     async def is_user_verified(self,email:str,session:AsyncSession):
         statement=await self.get_user_by_email(email=email,session=session)
@@ -57,6 +70,13 @@ class UserService:
             "verified":True,
             "message":"user is verified"
         }
+    async def delete_user(self,email:str,session:AsyncSession):
+        user=await self.get_user_by_email(email=email,session=session)
+        if user:
+            await session.delete(user)
+            await session.commit()
+            return True
+        return False
             
             
             

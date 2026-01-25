@@ -12,8 +12,8 @@ class UserCreateModel(BaseModel):
     password (str): The password of the user.
     
     '''
-    username:str=Field(max_length=8)
-    email:str = Field(max_length=40)
+    username:str=Field(max_length=30)
+    email:EmailStr = Field(max_length=320)
     password:str = Field(min_length=6, max_length=20)
 
 class UserModel(BaseModel):

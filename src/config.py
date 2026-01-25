@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     REDIS_PORT:int
     GMAIL:str
     GMAIL_PASSWORD:str
+    DOMAIN:str
     
     model_config=SettingsConfigDict(
         env_file=".env",

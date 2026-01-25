@@ -5,7 +5,8 @@ from datetime import datetime
 import jwt
 import uuid
 from src.config import Config
-
+from itsdangerous import URLSafeTimedSerializer
+import logging
 
 def generate_hash_password(password:str)->str:
     '''
@@ -77,4 +78,25 @@ def decode_token(token:str)->dict:
     except jwt.InvalidTokenError:
         raise Exception("Invalid token")
     
+
+serializer=URLSafeTimedSerializer(Config.SECRET_KEY,salt="email-configration")
+
+def create_email_token(data:dict):
+    """This function creates a time-sensitive email token using itsdangerous library.
+
+    Args:
+        data (dict): The data to be included in the token.
+    """
+    
+    token=serializer.dumps(data)
+    return token
+
+def decode_email_token(token:str)->dict:
+    try:
+        email_token_data=serializer.loads(token)
+        return email_token_data
+    except Exception as e:
+        logging.error(f"Error decoding email token: {e}")
+
+        raise Exception("Invalid or expired email token")
     

@@ -1,4 +1,4 @@
-from typing import Any,Callable
+from typing import Any,Callable,Optional
 from fastapi.requests import Request
 from fastapi.responses import JSONResponse
 from fastapi import FastAPI,status
@@ -24,7 +24,9 @@ class RefreshTokenRequired(BooklyException):
 
 class UserAlreadyExists(BooklyException):
     """User has provided an email for a user who exists during sign up."""
-    pass
+    def __init__(self, message: Optional[str] = None):
+        self.message = message or "User with given email already exists"
+        super().__init__(self.message)
 
 class InvalidCredentials(BooklyException):
     """User has provided wrong email or password during log in."""
@@ -69,13 +71,10 @@ def create_exception_handeler(status_code:int,detail:Any)->Callable[[Request,Exc
 
 
 def register_exception_handler(app:FastAPI):
-    app.add_exception_handler(
-        UserAlreadyExists,
-        create_exception_handeler(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail={"error":"User with given email already exists"}
-        )
-    )
+    async def _user_already_exists_handler(request: Request, exc: UserAlreadyExists) -> JSONResponse:
+        return JSONResponse(status_code=status.HTTP_403_FORBIDDEN, content={"error": exc.message})
+
+    app.add_exception_handler(UserAlreadyExists, _user_already_exists_handler)
     
     app.add_exception_handler(
         UserNotFound,
