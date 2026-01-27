@@ -171,15 +171,31 @@ async def get_current_user(user_details=Depends(get_current_logged_user),_:bool=
     return user_details
 
 
-@auth_router.post("/verify")
-async def is_verified_user(email:str,session:AsyncSession=Depends(get_session)):
-       verified=await user_service.is_user_verified(email=email,session=session)
-       if verified:
-           return {"message":"verified"}
-       raise HTTPException(
-           status_code=status.HTTP_401_UNAUTHORIZED,
-           detail="User is not verified"
-       )
+@auth_router.get("/verify/{token}")
+async def verify_user_email(token:str,session:AsyncSession=Depends(get_session)):
+    try:
+        token_data=decode_email_token(token)
+        email=token_data.get("email")
+        user=await user_service.get_user_by_email(email=email,session=session)
+        if not user:
+            raise UserNotFound()
+        if user.is_verified:
+            return JSONResponse(
+                content={
+                    "verified":True,
+                    "message":"User is already verified"
+                },
+                status_code=status.HTTP_200_OK
+            )
+        else:
+            get_verfied_user=await user_service.get_verified(email,session)
+            return get_verfied_user
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired token"
+        )
+
 
 @auth_router.post("/getverified",response_model=UserModel)
 async def get_verified(email:str,session:AsyncSession=Depends(get_session)):
