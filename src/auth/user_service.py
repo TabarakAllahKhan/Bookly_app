@@ -1,4 +1,4 @@
-from src.db.models import User
+from src.db.models import User, Book, Review
 from sqlmodel.ext.asyncio.session import AsyncSession
 from src.auth.schemas import UserCreateModel,UserModel
 from src.auth.utils import generate_hash_password
@@ -73,12 +73,41 @@ class UserService:
     async def delete_user(self,email:str,session:AsyncSession):
         user=await self.get_user_by_email(email=email,session=session)
         if user:
+            # delete reviews authored by the user
+            statement = select(Review).where(Review.user_uid == user.uid)
+            result = await session.exec(statement)
+            for r in result.all():
+                await session.delete(r)
+
+            # find books owned by the user
+            book_stmt = select(Book).where(Book.user_uid == user.uid)
+            book_res = await session.exec(book_stmt)
+            books = book_res.all()
+
+            # delete reviews for those books, then delete the books
+            for b in books:
+                b_rev_stmt = select(Review).where(Review.book_uid == b.id)
+                b_rev_res = await session.exec(b_rev_stmt)
+                for br in b_rev_res.all():
+                    await session.delete(br)
+                await session.delete(b)
+
+            # finally delete the user
             await session.delete(user)
             await session.commit()
             return True
         return False
             
-            
+    async def update_user_password(self, email: str, new_password: str, session: AsyncSession):
+        user = await self.get_user_by_email(email=email, session=session)
+        if user:
+            # hash the provided plaintext password and store it on the user
+            user.password_hash = generate_hash_password(new_password)
+            session.add(user)
+            await session.commit()
+            await session.refresh(user)
+            return user
+        return None
             
             
         

@@ -59,6 +59,9 @@ class InvalidCredentials(BooklyException):
     """User provided wrong email or password during log in."""
     pass
 
+class AccountNotVerified(BooklyException):
+    """User account is not verified."""
+    pass
 
 def create_exception_handeler(status_code:int,detail:Any)->Callable[[Request,Exception],JSONResponse]:
     
@@ -156,6 +159,13 @@ def register_exception_handler(app:FastAPI):
         create_exception_handeler(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={"error":"The provided token has been revoked"}
+        )
+    )
+    app.add_exception_handler(
+        AccountNotVerified,
+        create_exception_handeler(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"error":"User account is not verified"}
         )
     )
     

@@ -27,7 +27,12 @@ class UserLoginModel(BaseModel):
 class EmailSchema(BaseModel):
     addresses:list[str]
 
+class PasswordResetSchema(BaseModel):
+    email:str
 
+class PasswordResetConfirmSchema(BaseModel):
+    new_password:str
+    confirm_password:str
     
 class Config:
     orm_mode = True

@@ -1,5 +1,5 @@
 from fastapi import APIRouter,Depends,status,BackgroundTasks
-from src.auth.schemas import UserCreateModel,UserModel,UserLoginModel,EmailSchema
+from src.auth.schemas import UserCreateModel,UserModel,UserLoginModel,EmailSchema,PasswordResetSchema,PasswordResetConfirmSchema
 from src.auth.user_service import UserService
 from src.db.main import get_session
 from fastapi.exceptions import HTTPException
@@ -236,4 +236,55 @@ async def revoked_token(token_details:dict=Depends(AccessTokenBearer())):
         status_code=status.HTTP_200_OK
     )
     
+@auth_router.post("/password_reset")
+async def password_reset(email:PasswordResetSchema,background_tasks:BackgroundTasks,session:AsyncSession=Depends(get_session)):
+      email=email.email
+      user=await user_service.get_user_by_email(email,session)
+      if not user:
+          raise UserNotFound()
+      else:
+           token=create_email_token({"email":email})
+           domain=Config.DOMAIN
+           reset_link=f"http://{domain}/api/v1/auth/reset_password/{token}"
+           html_message=f"""
+                  <h1>Password Reset Request</h1>
+                  <p>Click this <a href="{reset_link}"> link</a> to reset your password</p>
+              """
+           background_tasks.add_task(
+                gmail.send,
+                subject="Password Reset Request",
+                receivers=[email],
+                html=html_message,
+            )
+           return JSONResponse(
+               content={
+                     "message":"Password reset link has been sent to your email"
+               }
+               ,
+               status_code=status.HTTP_200_OK
+           )
+
+@auth_router.post("/reset_password/{token}")
+async def reset_confirm_password(token:str,password:PasswordResetConfirmSchema,session:AsyncSession=Depends(get_session)):
+    token_data=decode_email_token(token)
+    user_email=token_data.get("email")
+    user_password=password.new_password
+    confirm_password=password.confirm_password
     
+    if user_password != confirm_password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Passwords do not match"
+        )
+    if user_email is not None:
+        user=await user_service.get_user_by_email(user_email,session)
+        if not user:
+            raise UserNotFound()
+        
+        await user_service.update_user_password(user_email,user_password,session)
+        return JSONResponse(
+            content={
+                "message":"Password has been reset successfully"
+            },
+            status_code=status.HTTP_200_OK
+        )
