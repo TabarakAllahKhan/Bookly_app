@@ -123,5 +123,17 @@ pip install redmail
 To run clery run the following command
 
 ```bash
-celery -A src.celerly.celery_app worker --pool=solo -l info
+celery -A src.celerly.celery_app worker --pool=solo -l info -E
+```
+
+To more analyze the task sent or not i used the flower dashboard
+
+```
+pip install flower
+```
+
+then run in a new terminal
+
+```
+celery -A src.celerly.celery_app flower --address=0.0.0.0 --port=5555 --loglevel=info
 ```
