@@ -3,7 +3,7 @@ from fastapi.security.http import HTTPAuthorizationCredentials
 from fastapi import Request, status,Depends
 from fastapi.exceptions import HTTPException
 from .utils import decode_token
-from src.db.redis import check_black_list
+from src.db.redis_client import check_black_list
 from src.db.main import get_session
 from sqlmodel.ext.asyncio.session import AsyncSession
 from src.auth.user_service import UserService

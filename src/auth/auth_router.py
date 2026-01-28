@@ -9,10 +9,11 @@ from datetime import timedelta,datetime
 from src.config import Config
 from fastapi.responses import JSONResponse
 from .dependencies import RefreshTokenBearer,AccessTokenBearer,get_current_logged_user,RoleChecker
-from src.db.redis import check_black_list, create_jti_blocklist
+from src.db.redis_client import check_black_list, create_jti_blocklist
 from redmail import gmail
 import os
 from pathlib import Path
+from  src.celerly import send_email
 
 BASE_DIR=Path(__file__).resolve().parent
 
@@ -37,28 +38,29 @@ role_checker=RoleChecker(['admin','user'])
 async def send_mail(emails: EmailSchema, background_tasks: BackgroundTasks):
     # Extract the list of addresses from your Pydantic model
     recipient_list = emails.addresses
-    file_path=BASE_DIR.parent / "testing.docx"
-    
-    attachments={}
-    
-    if os.path.exists(file_path):
-        attachments={"testing.docx":file_path}
     
     # Define the HTML content
     html_content = """
     <h1>Welcome to Bookly</h1>
     <p>This is a test email from the <b>Bookly</b> application. you are ready to go</p>
     """
-    
-    # Use BackgroundTasks so the API stays fast
-    background_tasks.add_task(
-        gmail.send,
-        subject="Welcome to Bookly",
-        receivers=recipient_list,
-        html=html_content,  # Pass the HTML here
-        text="Welcome to Bookly!" ,# Fallback for plain-text clients
-        attachments=attachments
-    )
+    try:
+        send_email.delay(
+            subject="Test Email from Bookly",
+            receivers=recipient_list,
+            html=html_content,
+            text="This is a test email from the Bookly application. you are ready to go"
+        )
+    except Exception as e:
+        import logging
+        logging.exception("Celery task failed, falling back to background task")
+        background_tasks.add_task(
+            gmail.send,
+            subject="Test Email from Bookly",
+            receivers=recipient_list,
+            html=html_content,
+            text="This is a test email from the Bookly application. you are ready to go"
+        )
     
     return {"message": "Email is being sent successfully"}
     
@@ -66,30 +68,41 @@ async def send_mail(emails: EmailSchema, background_tasks: BackgroundTasks):
 @auth_router.post("/signup",response_model=UserModel,status_code=status.HTTP_201_CREATED)
 async def signup(user_data: UserCreateModel,background_tasks:BackgroundTasks,session:AsyncSession=Depends(get_session)):
     email=user_data.email
-    user_exist= user_service.user_exists(email,session)
+    user_exist = user_service.user_exists(email, session)
     if await user_exist:
-       raise UserAlreadyExists()
-    else:
-        user=await user_service.create_user(user_data,session)
-        # attempt to create verification token and schedule email; don't let failures block signup
+        raise UserAlreadyExists()
+    user = await user_service.create_user(user_data, session)
+
+    # attempt to create verification token and send email via Celery; fallback to background task
+    try:
+        domain = Config.DOMAIN
+        token = create_email_token({"email": email})
+        verify_link = f"http://{domain}/api/v1/auth/verify/{token}"
+        html_message = f"""
+           <h1>Verify your email</h1>
+           <p>Click this <a href="{verify_link}">link</a> to verify your email address</p>
+        """
         try:
-            domain=Config.DOMAIN
-            token=create_email_token({"email":email})
-            verify_link=f"http://{domain}/api/v1/auth/verify/{token}"
-            html_mssage=f"""
-               <h1>Verify your email</h1>
-               <p>Click this <a href="{verify_link}"> link</a> to verify your email address</p>
-            """
+            send_email.delay(
+                subject="Verify your email",
+                receivers=[email],
+                html=html_message,
+                text=f"Verify: {verify_link}"
+            )
+        except Exception:
+            import logging
+            logging.exception("Celery task failed, falling back to background task")
             background_tasks.add_task(
                 gmail.send,
                 subject="Verify your email",
                 receivers=[email],
-                html=html_mssage,
+                html=html_message,
                 text=f"Verify: {verify_link}"
             )
-        except Exception as e:
-            import logging
-            logging.exception("Failed to create verification token or send email")
+    except Exception:
+        import logging
+        logging.exception("Failed to create verification token or schedule email")
+
     return {"verified": user.is_verified, "message": "User created successfully. Please verify your email."}
 
 @auth_router.post("/login",status_code=status.HTTP_200_OK)

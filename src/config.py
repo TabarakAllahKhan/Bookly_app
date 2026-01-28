@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE:int
     REDIS_HOST:str="localhost"
     REDIS_PORT:int
+    REDIS_URL:str
     GMAIL:str
     GMAIL_PASSWORD:str
     DOMAIN:str
@@ -19,3 +20,6 @@ class Settings(BaseSettings):
     )
 
 Config=Settings()
+
+broker_url=Config.REDIS_URL
+result_backend=Config.REDIS_URL

@@ -117,3 +117,11 @@ The Library i used can be installed here:
 ```
 pip install redmail
 ```
+
+## Clery 
+
+To run clery run the following command
+
+```bash
+celery -A src.celerly.celery_app worker --pool=solo -l info
+```
