@@ -1,0 +1,26 @@
+version: "3.8"
+services:
+  app:
+    build: .
+    image: tabarakallah/bookly:v1.0
+    ports:
+      - "80:80"
+    env_file:
+      - .env
+    restart: unless-stopped
+    # -------------------------------------------------------
+    # 1. ADD THIS SECTION
+    # This ensures 'host.docker.internal' works on all OSs (Linux/Mac/Win)
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    # -------------------------------------------------------
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  # -------------------------------------------------------
+  # 2. REMOVE THE 'db' SERVICE ENTIRELY
+  # We deleted the db service here because you are using your local computer's DB.
+  # -------------------------------------------------------
