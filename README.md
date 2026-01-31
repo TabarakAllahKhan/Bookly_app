@@ -427,8 +427,3 @@ This backend is also dockerize and pushed on `docker hub` you can also check out
 - Repo owner: TabarakAllahKhan
 - Use repository issues for bugs, feature requests, or questions.
 
----
-
-Thank you for exploring Bookly! If you'd like, I can:
-- Provide a small ASGI entrypoint (app factory) that mounts all routers under `/api/v1/` so the full app can be run directly with uvicorn.
-- Create example Postman/Insomnia collection for the documented endpoints.
